@@ -46,7 +46,7 @@ onMounted(() => {
 	const logoEl = svg.value!.$el;
 
 	// Change the logo fill color inline, so that favicon can also use it
-	const logoColor = releaseChannel === 'dev' ? '#838383' : '#E9984B';
+	const logoColor = releaseChannel === 'dev' ? '#EC2059' : '#EC2059';
 	logoEl.querySelector('path')?.setAttribute('fill', logoColor);
 
 	// Reuse the SVG as favicon

@@ -113,5 +113,6 @@ watch(
 </script>
 
 <template>
-	<N8nTabs v-model="selectedTab" :options="options" data-test-id="project-tabs" />
+	<!-- <N8nTabs v-model="selectedTab" :options="options" data-test-id="project-tabs" /> -->
+	<div></div>
 </template>

@@ -66,7 +66,7 @@ const trackTabClick = (insightType: keyof InsightsSummary) => {
 </script>
 
 <template>
-	<div :class="$style.insights">
+	<!-- <div :class="$style.insights">
 		<ul data-test-id="insights-summary-tabs">
 			<li
 				v-for="{ id, value, deviation, deviationUnit, unit, to } in summaryWithRouteLocations"
@@ -133,7 +133,8 @@ const trackTabClick = (insightType: keyof InsightsSummary) => {
 				</N8nTooltip>
 			</li>
 		</ul>
-	</div>
+	</div> -->
+	<div></div>
 </template>
 
 <style lang="scss" module>

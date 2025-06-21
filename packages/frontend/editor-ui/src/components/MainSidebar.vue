@@ -81,7 +81,8 @@ const mainMenuItems = computed(() => [
 		icon: 'box-open',
 		label: i18n.baseText('mainSidebar.templates'),
 		position: 'bottom',
-		available: settingsStore.isTemplatesEnabled && templatesStore.hasCustomTemplatesHost,
+		//available: settingsStore.isTemplatesEnabled && templatesStore.hasCustomTemplatesHost,
+		available: false,
 		route: { to: { name: VIEWS.TEMPLATES } },
 	},
 	{
@@ -90,7 +91,8 @@ const mainMenuItems = computed(() => [
 		icon: 'box-open',
 		label: i18n.baseText('mainSidebar.templates'),
 		position: 'bottom',
-		available: settingsStore.isTemplatesEnabled && !templatesStore.hasCustomTemplatesHost,
+		// available: settingsStore.isTemplatesEnabled && !templatesStore.hasCustomTemplatesHost,
+		available: false,
 		link: {
 			href: templatesStore.websiteTemplateRepositoryURL,
 			target: '_blank',
@@ -102,6 +104,7 @@ const mainMenuItems = computed(() => [
 		label: i18n.baseText('mainSidebar.variables'),
 		customIconSize: 'medium',
 		position: 'bottom',
+		available: false,
 		route: { to: { name: VIEWS.VARIABLES } },
 	},
 	{
@@ -110,16 +113,19 @@ const mainMenuItems = computed(() => [
 		label: 'Insights',
 		customIconSize: 'medium',
 		position: 'bottom',
+		available: false,
 		route: { to: { name: VIEWS.INSIGHTS } },
-		available:
-			settingsStore.settings.activeModules.includes('insights') &&
-			hasPermission(['rbac'], { rbac: { scope: 'insights:list' } }),
+		// available:
+		// 	settingsStore.settings.activeModules.includes('insights') &&
+		// 	hasPermission(['rbac'], { rbac: { scope: 'insights:list' } }),
+		available: false,
 	},
 	{
 		id: 'help',
 		icon: 'question',
 		label: i18n.baseText('mainSidebar.help'),
 		position: 'bottom',
+		available: false,
 		children: [
 			{
 				id: 'quickstart',
@@ -184,7 +190,7 @@ const hasVersionUpdates = computed(
 );
 
 const nextVersions = computed(() => versionsStore.nextVersions);
-const showUserArea = computed(() => hasPermission(['authenticated']));
+const showUserArea = computed(() => hasPermission(['authenticated'])) && false;
 const userIsTrialing = computed(() => cloudPlanStore.userIsTrialing);
 
 onMounted(async () => {
