@@ -1,0 +1,428 @@
+{
+  "createdAt": "2025-01-20T12:00:00.000Z",
+  "updatedAt": "2025-01-20T12:00:00.000Z",
+  "id": "pendo-mcp-demo",
+  "name": "Pendo MCP Server Demo - Analytics and Guide Management",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "start-node"
+    },
+    {
+      "parameters": {
+        "name": "pendo-mcp-server",
+        "path": "pendo-analytics",
+        "authentication": "none"
+      },
+      "name": "MCP Trigger",
+      "type": "@n8n/nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "id": "mcp-trigger-node"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://localhost:3000/pendo-analytics",
+        "authentication": "none",
+        "include": "all"
+      },
+      "name": "Pendo MCP Client",
+      "type": "@n8n/nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "id": "pendo-mcp-client"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "content": "You are a Pendo analytics assistant. Use the available Pendo tools to:\n\n1. Test the connection to Pendo\n2. Get the latest pages data (limit to 10)\n3. Get account information (limit to 5)\n4. Get recent visitor data\n5. Create a summary report of the analytics data\n\nPlease execute these tasks step by step and provide insights about user engagement.",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "Pendo Analytics AI",
+      "type": "@n8n/nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [850, 300],
+      "id": "analytics-ai-node"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "subject": "Pendo Analytics Report - {{new Date().toDateString()}}",
+        "message": "=<h2>Pendo Analytics Report</h2>\n\n<p>Generated on: {{new Date().toISOString()}}</p>\n\n<h3>Summary</h3>\n<div style=\"background: #f5f5f5; padding: 15px; border-radius: 5px;\">\n{{$node[\"Pendo Analytics AI\"].json.content}}\n</div>\n\n<p>This automated report was generated using the Pendo MCP Server integration with n8n.</p>",
+        "options": {}
+      },
+      "name": "Email Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Email"
+        }
+      },
+      "id": "email-report-node"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Pendo Analytics AI\"].json.error}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "id": "check-success-node"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "content": "Based on the Pendo data analysis, create and manage user onboarding guides. Please:\n\n1. Get existing guides from Pendo\n2. Analyze which pages have low engagement\n3. Create a new onboarding guide for the most visited page that needs improvement\n4. Update any existing guides that might be underperforming\n\nFocus on improving user engagement and reducing bounce rates.",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "Guide Management AI",
+      "type": "@n8n/nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [850, 500],
+      "id": "guide-management-ai"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableName": "pendo_analytics_log",
+        "columns": {
+          "values": [
+            {
+              "column": "timestamp",
+              "value": "={{new Date().toISOString()}}"
+            },
+            {
+              "column": "report_type",
+              "value": "automated_analytics"
+            },
+            {
+              "column": "status",
+              "value": "={{$node[\"Pendo Analytics AI\"].json.error ? 'failed' : 'success'}}"
+            },
+            {
+              "column": "summary",
+              "value": "={{$node[\"Pendo Analytics AI\"].json.content}}"
+            },
+            {
+              "column": "guides_updated",
+              "value": "={{$node[\"Guide Management AI\"].json.content}}"
+            }
+          ]
+        }
+      },
+      "name": "Log to Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      },
+      "id": "database-log-node"
+    },
+    {
+      "parameters": {
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "httpMethod": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\n  \"text\": \"📊 Pendo Analytics Report Generated\",\n  \"attachments\": [\n    {\n      \"color\": \"{{$node[\"Pendo Analytics AI\"].json.error ? 'danger' : 'good'}}\",\n      \"title\": \"Analytics Summary\",\n      \"text\": \"{{$node[\"Pendo Analytics AI\"].json.content}}\",\n      \"footer\": \"Pendo MCP Server\",\n      \"ts\": {{Math.floor(Date.now() / 1000)}}\n    },\n    {\n      \"color\": \"#2eb886\",\n      \"title\": \"Guide Management Updates\", \n      \"text\": \"{{$node[\"Guide Management AI\"].json.content}}\",\n      \"footer\": \"n8n Automation\"\n    }\n  ]\n}"
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 500],
+      "id": "slack-notification-node"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 500],
+      "id": "schedule-node"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Guide Management AI\"].json.content}}",
+              "operation": "contains",
+              "value2": "guide created"
+            }
+          ]
+        }
+      },
+      "name": "Check Guide Created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 500],
+      "id": "check-guide-created"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "resource": "event",
+        "limit": 100,
+        "additionalFields": {
+          "startDate": "={{DateTime.now().minus({days: 7}).toISODate()}}",
+          "endDate": "={{DateTime.now().toISODate()}}"
+        }
+      },
+      "name": "Get Recent Events",
+      "type": "n8n-nodes-base.pendo",
+      "typeVersion": 1,
+      "position": [450, 700],
+      "credentials": {
+        "pendoApi": {
+          "id": "pendo-api-credentials",
+          "name": "Pendo API"
+        }
+      },
+      "id": "get-events-node"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "content": "Analyze the recent Pendo events data and identify:\n\n1. Most active users and their behavior patterns\n2. Feature usage trends\n3. Potential churn indicators\n4. Opportunities for engagement improvement\n\nProvide actionable recommendations for the product team.\n\nEvents data: {{JSON.stringify($node[\"Get Recent Events\"].json)}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "Event Analysis AI",
+      "type": "@n8n/nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [650, 700],
+      "id": "event-analysis-ai"
+    },
+    {
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "messages": {
+          "values": [
+            {
+              "content": "Create a feature usage dashboard data summary based on the Pendo analytics. Format the output as JSON with the following structure:\n\n{\n  \"period\": \"last_7_days\",\n  \"total_events\": number,\n  \"unique_visitors\": number,\n  \"top_features\": [array of feature names],\n  \"engagement_score\": number,\n  \"recommendations\": [array of strings]\n}\n\nBase this on: {{$node[\"Event Analysis AI\"].json.content}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "Dashboard Data Generator",
+      "type": "@n8n/nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [850, 700],
+      "id": "dashboard-generator"
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "MCP Trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Trigger": {
+      "main": [
+        [
+          {
+            "node": "Pendo MCP Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pendo MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Pendo Analytics AI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Guide Management AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pendo Analytics AI": {
+      "main": [
+        [
+          {
+            "node": "Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Report": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Log to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guide Management AI": {
+      "main": [
+        [
+          {
+            "node": "Check Guide Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Guide Created": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Events": {
+      "main": [
+        [
+          {
+            "node": "Event Analysis AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Analysis AI": {
+      "main": [
+        [
+          {
+            "node": "Dashboard Data Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dashboard Data Generator": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {},
+  "versionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "id": "pendo",
+      "name": "Pendo"
+    },
+    {
+      "id": "mcp",
+      "name": "MCP"
+    },
+    {
+      "id": "analytics",
+      "name": "Analytics"
+    },
+    {
+      "id": "ai",
+      "name": "AI"
+    }
+  ]
+}
