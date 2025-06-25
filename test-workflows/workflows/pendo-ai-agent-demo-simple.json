@@ -1,0 +1,157 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        240
+      ],
+      "id": "35d053ac-ca5e-45f3-8048-1bc5a72415cb"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://localhost:3000/sse"
+      },
+      "name": "Pendo MCP Tools",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        280,
+        480
+      ],
+      "id": "ed8bcbc5-b4f6-4ef5-b234-9282ead69a53"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {
+          "temperature": 0.3,
+          "keepAlive": "5m",
+          "numCtx": 2048,
+          "numPredict": 1024
+        }
+      },
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        120,
+        480
+      ],
+      "id": "2766cec2-65be-4ecc-999e-94de63f5c387",
+      "credentials": {
+        "ollamaApi": {
+          "id": "TuIqOkiDmJwqwS9G",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant with access to Pendo tools. Simply list the available tools first, then get 2 pages from Pendo. Be concise.",
+          "maxIterations": 3,
+          "returnIntermediateSteps": true
+        }
+      },
+      "name": "Pendo Analytics Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        120,
+        240
+      ],
+      "id": "0f5021d3-79be-4bb6-adc7-f7f9e025bb17"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simple output for debugging\nconst output = $json.output || $json.text || 'No output';\nconst steps = $json.steps || [];\n\nreturn {\n  output: output,\n  stepCount: steps.length,\n  timestamp: new Date().toISOString(),\n  debug: {\n    hasOutput: !!output,\n    outputLength: output.length,\n    steps: steps.map(s => s.action || 'unknown')\n  }\n};"
+      },
+      "name": "Debug Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        240
+      ],
+      "id": "1b16b938-54e2-40e2-91b6-49dd594bb9f4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simple test input\nreturn { input: 'List available tools' };"
+      },
+      "name": "Set Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        240
+      ],
+      "id": "081cd8d5-1377-4954-9e5f-8a791cda99cd"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pendo MCP Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "Pendo Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Pendo Analytics Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pendo Analytics Agent": {
+      "main": [
+        [
+          {
+            "node": "Debug Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input": {
+      "main": [
+        [
+          {
+            "node": "Pendo Analytics Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "4a3a07e69c8251e15de1e29c677cdbd1f0f92a8a8f7693ea1fc3c989a473d5b8"
+  }
+}

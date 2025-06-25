@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 200],
+      "id": "trigger-node"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://localhost:3000/sse",
+        "authentication": "none"
+      },
+      "name": "Test MCP Connection",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [300, 200],
+      "id": "mcp-node"
+    }
+  ],
+  "connections": {},
+  "pinData": {},
+  "meta": {
+    "instanceId": "test-instance"
+  }
+}

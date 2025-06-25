@@ -1,0 +1,97 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "id": "16c9fa25-529b-49f7-ae73-23229d78e90d",
+      "notesInFlow": true,
+      "notes": "Manually trigger connection test to Pendo MCP server"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"test-connection\",\n    \"arguments\": {}\n  },\n  \"id\": 1\n}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "name": "Test Connection",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        200,
+        200
+      ],
+      "id": "efb971d7-0de6-49c7-a9d0-5ea15cfb579f",
+      "notesInFlow": true,
+      "notes": "Calls test-connection tool on MCP server to verify API connectivity"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Parse Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        400,
+        200
+      ],
+      "id": "8f416a36-f56c-4609-bbfd-2e02440939e8",
+      "notesInFlow": true,
+      "notes": "Extracts connection status and message from MCP response"
+    },
+    {
+      "parameters": {
+        "content": "## Pendo Connection Test\n\n### This simple workflow tests the connection between n8n and Pendo.\nIt calls the test-connection tool to verify that the local server is running and can successfully authenticate with the Pendo API. The workflow extracts the connection status and displays any relevant messages. Use this to troubleshoot connectivity issues before running more complex workflows.",
+        "height": 260,
+        "width": 400
+      },
+      "name": "Workflow Description",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -100
+      ],
+      "id": "e24e1585-620a-4484-b030-c05bb71897bf"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Test Connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Connection": {
+      "main": [
+        [
+          {
+            "node": "Parse Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "4a3a07e69c8251e15de1e29c677cdbd1f0f92a8a8f7693ea1fc3c989a473d5b8"
+  }
+}

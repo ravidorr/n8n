@@ -25,6 +25,17 @@ A straightforward workflow that demonstrates:
 - Scheduled execution (weekdays at 9 AM)
 - Automated onboarding guide creation
 
+### 3. Pendo Proactive Detractor-to-Delight Workflow
+**File:** `pendo-detractor-delight.json`
+
+A real-time NPS detractor response system that:
+- Triggers instantly on NPS submissions via webhook
+- Filters and enriches detractor data with AI analysis
+- Orchestrates multi-channel responses (Slack, Zendesk, Jira, Salesforce)
+- Prioritizes high-value accounts with escalation paths
+- Logs all interactions for ROI measurement
+- Includes PagerDuty alerts for critical scores
+
 ## Prerequisites
 
 ### 1. Pendo MCP Server Setup

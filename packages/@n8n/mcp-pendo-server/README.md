@@ -73,13 +73,47 @@ export PENDO_BASE_URL="https://engageapi.pendo.io"
 
 ### Running the Server
 
-```bash
-# Development mode
-npm run dev
+The server can run in two modes:
 
-# Production mode
+#### HTTP Mode (for n8n integration)
+
+```bash
+# Set environment variables
+export PENDO_API_KEY="your-api-key"
+export MCP_MODE=http
+export PORT=3000
+
+# Run the server
 npm run start
 ```
+
+This mode exposes:
+- SSE endpoint: `http://localhost:3000/sse` (for n8n MCP Client Tool)
+- HTTP endpoint: `http://localhost:3000/` (for direct JSON-RPC calls)
+- Health check: `http://localhost:3000/health`
+
+#### Stdio Mode (traditional MCP)
+
+```bash
+# Set environment variables
+export PENDO_API_KEY="your-api-key"
+export MCP_MODE=stdio  # or leave unset, stdio is default
+
+# Run the server
+npm run start
+```
+
+### Using with n8n
+
+The Pendo MCP server integrates seamlessly with n8n workflows:
+
+1. **With AI Agent**: Connect the MCP Client Tool node to an AI Agent node to let AI intelligently use Pendo tools
+2. **Direct HTTP**: Use HTTP Request nodes to make direct JSON-RPC calls to the server
+
+See the `test-workflows/` directory for example workflows:
+- `pendo-ai-agent-demo.json` - AI-powered analytics workflow
+- `pendo-simple-demo-fixed.json` - Direct HTTP request workflow
+- `pendo-detractor-delight.json` - Real-time NPS response system
 
 ### Using with MCP Clients
 

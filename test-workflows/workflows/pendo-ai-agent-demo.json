@@ -1,0 +1,329 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        240
+      ],
+      "id": "35d053ac-ca5e-45f3-8048-1bc5a72415cb",
+      "notesInFlow": true,
+      "notes": "Starts the AI-powered analytics workflow when manually triggered"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://localhost:3000/sse",
+        "authentication": "none",
+        "include": "all"
+      },
+      "name": "Pendo MCP Tools",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        280,
+        480
+      ],
+      "id": "ed8bcbc5-b4f6-4ef5-b234-9282ead69a53",
+      "notesInFlow": true,
+      "notes": "Provides AI agent with access to all Pendo MCP server tools for data retrieval"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {
+          "temperature": 0.3,
+          "keepAlive": "5m",
+          "numCtx": 2048,
+          "numPredict": 512
+        }
+      },
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        120,
+        480
+      ],
+      "id": "2766cec2-65be-4ecc-999e-94de63f5c387",
+      "notesInFlow": true,
+      "credentials": {
+        "ollamaApi": {
+          "id": "TuIqOkiDmJwqwS9G",
+          "name": "Ollama account"
+        }
+      },
+      "notes": "Local Llama 3.2 model for AI-powered analysis and report generation"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a Pendo analytics assistant. When asked, use the available tools to get data from Pendo and provide a brief summary. Be concise and efficient.",
+          "maxIterations": 5,
+          "returnIntermediateSteps": true
+        }
+      },
+      "name": "Pendo Analytics Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        120,
+        240
+      ],
+      "id": "0f5021d3-79be-4bb6-adc7-f7f9e025bb17",
+      "notesInFlow": true,
+      "notes": "AI agent that autonomously calls Pendo tools to gather data and generate comprehensive analytics insights"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and format the AI agent's response\nconst agentResponse = $json.output || $json.text || '';\n\n// Create a structured report object\nconst report = {\n  timestamp: new Date().toISOString(),\n  report_type: 'AI Analytics Report',\n  content: agentResponse,\n  metadata: {\n    model: 'llama3.2',\n    workflow_execution_id: $executionId,\n    generated_by: 'Pendo MCP AI Agent'\n  }\n};\n\nreturn report;"
+      },
+      "name": "Format Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        240
+      ],
+      "id": "1b16b938-54e2-40e2-91b6-49dd594bb9f4",
+      "notesInFlow": true,
+      "notes": "Extracts AI response and formats it into a structured report object with metadata"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "# AI-Generated Pendo Analytics Report\n\n**Generated:** {{$json.timestamp}}\n\n---\n\n{{$json.content}}",
+        "destinationKey": "html",
+        "options": {}
+      },
+      "name": "Markdown Report",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        660,
+        240
+      ],
+      "id": "d3a3f7ae-e68c-49d0-834a-c5d17a759080",
+      "notesInFlow": true,
+      "notes": "Converts the AI-generated report from markdown to HTML for email formatting"
+    },
+    {
+      "parameters": {
+        "fromEmail": "ravidor@pendo.io",
+        "toEmail": "ravidor@pendo.io",
+        "subject": "AI-Generated Pendo Analytics Report - {{$now.format('yyyy-MM-dd')}}",
+        "options": {}
+      },
+      "name": "Email Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        60
+      ],
+      "id": "fea09828-a0a2-4097-a138-ccc340e6249e",
+      "notesInFlow": true,
+      "webhookId": "d940f329-d069-459e-b80b-f21a97e3b250",
+      "credentials": {
+        "smtp": {
+          "id": "2sI2Bxd5x0svddgW",
+          "name": "SMTP account"
+        }
+      },
+      "notes": "Sends the AI-generated analytics report via email to stakeholders"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "🤖 AI-Generated Pendo Analytics Report"
+            },
+            {
+              "name": "blocks",
+              "value": "=[\n  {\n    \"type\": \"header\",\n    \"text\": {\n      \"type\": \"plain_text\",\n      \"text\": \"AI Analytics Report Ready\",\n      \"emoji\": true\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"A new AI-generated Pendo analytics report has been created.\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*Report Preview:*\\n```\\n\" + ($node['Format Report'].json.content || '').substring(0, 500) + \"...\\n```\"\n    }\n  },\n  {\n    \"type\": \"context\",\n    \"elements\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"Generated at \" + $json.timestamp + \" | Full report sent via email\"\n      }\n    ]\n  }\n]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        880,
+        240
+      ],
+      "id": "3cc58def-ee01-4242-b275-05dfa4e31ef1",
+      "notesInFlow": true,
+      "notes": "Posts AI report preview to Slack channel with formatted blocks"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "pendo_analytics_log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{$json.timestamp}}",
+            "workflow_name": "Pendo AI Agent Demo",
+            "workflow_execution_id": "={{$executionId}}",
+            "report_type": "ai_analytics",
+            "status": "success",
+            "summary": "={{($json.content || '').substring(0, 1000)}}",
+            "execution_time_ms": "={{Date.now() - new Date($execution.startedAt).getTime()}}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Log to Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        880,
+        420
+      ],
+      "id": "041328e1-d3eb-4962-92e2-ea5e44559f50",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Logs AI report metadata and summary to PostgreSQL database for tracking"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Start with a simple test\nreturn { input: 'Get 2 pages from Pendo and summarize them' };"
+      },
+      "name": "Set Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        240
+      ],
+      "id": "081cd8d5-1377-4954-9e5f-8a791cda99cd",
+      "notesInFlow": true,
+      "notes": "Defines the AI agent's task - can be customized to request specific analytics"
+    },
+    {
+      "parameters": {
+        "content": "## AI-Powered Pendo Analytics Workflow\n\n### This workflow leverages AI (Llama 3.2) to autonomously interact with Pendo and generate intelligent analytics reports.\nThe AI agent is given a task to collect data from multiple Pendo endpoints (pages, accounts, visitors, and feature usage), analyze the information, and produce a comprehensive report with business insights and recommendations. The workflow then distributes the AI-generated report via email, Slack, and logs it to a database for tracking.\nThis demonstrates the power of combining AI agents with MCP tools for intelligent automation.",
+        "height": 260,
+        "width": 640
+      },
+      "name": "Workflow Description",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -40
+      ],
+      "id": "3ae40ade-8705-4382-910e-ed40b364aefd"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pendo MCP Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "Pendo Analytics Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Pendo Analytics Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pendo Analytics Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Report": {
+      "main": [
+        [
+          {
+            "node": "Markdown Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown Report": {
+      "main": [
+        [
+          {
+            "node": "Email Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input": {
+      "main": [
+        [
+          {
+            "node": "Pendo Analytics Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "4a3a07e69c8251e15de1e29c677cdbd1f0f92a8a8f7693ea1fc3c989a473d5b8"
+  }
+}

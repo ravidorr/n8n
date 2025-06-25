@@ -1,0 +1,74 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        240
+      ],
+      "id": "trigger-1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get-pages\",\n    \"arguments\": {\n      \"limit\": 3\n    }\n  },\n  \"id\": 1\n}",
+        "options": {}
+      },
+      "name": "Get Pendo Pages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        150,
+        240
+      ],
+      "id": "http-pages"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the response\nconst response = $json;\nlet pages = [];\n\ntry {\n  if (response.result && response.result.content && response.result.content[0]) {\n    pages = JSON.parse(response.result.content[0].text);\n  }\n} catch (error) {\n  console.error('Error parsing pages:', error);\n}\n\n// Create a simple summary\nconst summary = {\n  total_pages: pages.length,\n  pages: pages.slice(0, 3).map(page => ({\n    id: page.id || 'unknown',\n    name: page.name || page.url || 'Unnamed Page',\n    url: page.url || 'N/A'\n  })),\n  timestamp: new Date().toISOString(),\n  report: `Found ${pages.length} pages in Pendo. Top pages:\\n${pages.slice(0, 3).map(p => `- ${p.name || p.url || p.id}`).join('\\n')}`\n};\n\nreturn summary;"
+      },
+      "name": "Process Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        240
+      ],
+      "id": "code-process"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pendo Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pendo Pages": {
+      "main": [
+        [
+          {
+            "node": "Process Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "test-instance"
+  }
+}

@@ -2,6 +2,7 @@
 
 import { PendoMCPServer } from './server.js';
 import { PendoConfig } from './types.js';
+import { startHttpServer } from './http-server.js';
 
 async function main() {
 	// Get API key from environment variable
@@ -22,7 +23,12 @@ async function main() {
 		baseUrl,
 	};
 
-	const server = new PendoMCPServer(config);
+	// Log configuration (without sensitive data)
+	console.error(`Using Pendo API at: ${baseUrl || 'https://engageapi.pendo.io (default)'}`);
+
+	// Check if we should run in HTTP mode (for n8n) or stdio mode (traditional MCP)
+	const mode = process.env.MCP_MODE || 'stdio';
+	const port = parseInt(process.env.PORT || '3000', 10);
 
 	// Handle process termination gracefully
 	process.on('SIGINT', () => {
@@ -36,7 +42,16 @@ async function main() {
 	});
 
 	try {
-		await server.run();
+		if (mode === 'http') {
+			// Run as HTTP server for n8n integration
+			console.error('Starting Pendo MCP server in HTTP mode...');
+			await startHttpServer(config, port);
+		} else {
+			// Run in stdio mode for traditional MCP clients
+			console.error('Starting Pendo MCP server in stdio mode...');
+			const server = new PendoMCPServer(config);
+			await server.run();
+		}
 	} catch (error) {
 		console.error('Failed to start Pendo MCP server:', error);
 		process.exit(1);

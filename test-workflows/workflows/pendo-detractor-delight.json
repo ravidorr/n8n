@@ -1,0 +1,421 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pendo-nps-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Pendo NPS Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        380,
+        380
+      ],
+      "id": "300c13ff-958c-4556-a915-0187a3b61051",
+      "webhookId": "pendo-nps-webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        600,
+        280
+      ],
+      "id": "382ebe32-0d13-447e-9bf4-75862b0d1de6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.score}}",
+              "operation": "smallerEqual",
+              "value2": 6
+            },
+            {
+              "value1": "={{$json.score}}",
+              "operation": "largerEqual"
+            }
+          ]
+        }
+      },
+      "name": "Is Detractor?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        480
+      ],
+      "id": "939561c5-d20e-4263-a1a0-c00b3b707858"
+    },
+    {
+      "parameters": {},
+      "name": "Get Visitor Details",
+      "type": "@n8n/nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        40
+      ],
+      "id": "12c4af2b-1882-4865-a038-f243f4b03d40"
+    },
+    {
+      "parameters": {},
+      "name": "Get Account Details",
+      "type": "@n8n/nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        300
+      ],
+      "id": "b3670d46-bd5d-4378-96de-05edc957fbd5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and format the detractor data\nconst npsData = $input.first().json;\nconst visitorData = $node['Get Visitor Details'].json.result || {};\nconst accountData = $node['Get Account Details'].json.result || {};\n\n// Calculate customer health indicators\nconst accountAge = visitorData.created_at ? \n  Math.floor((Date.now() - new Date(visitorData.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;\n\nconst isHighValue = accountData.metadata?.plan === 'enterprise' || \n                   accountData.metadata?.mrr > 5000;\n\nconst urgencyLevel = npsData.score <= 3 ? 'CRITICAL' : 'HIGH';\n\n// Build enriched context\nconst enrichedData = {\n  // NPS Data\n  nps_score: npsData.score,\n  nps_comment: npsData.comment || 'No comment provided',\n  submission_time: new Date().toISOString(),\n  \n  // Visitor Data\n  visitor_id: visitorData.id || npsData.visitor_id,\n  visitor_email: visitorData.metadata?.email || 'Unknown',\n  visitor_name: visitorData.metadata?.name || 'Unknown User',\n  visitor_role: visitorData.metadata?.role || 'Unknown',\n  \n  // Account Data\n  account_id: accountData.id || visitorData.account_id,\n  account_name: accountData.name || 'Unknown Account',\n  account_plan: accountData.metadata?.plan || 'Unknown',\n  account_mrr: accountData.metadata?.mrr || 0,\n  account_age_days: accountAge,\n  \n  // Derived Insights\n  is_high_value: isHighValue,\n  urgency_level: urgencyLevel,\n  risk_score: calculateRiskScore(npsData.score, isHighValue, accountAge),\n  \n  // Context for actions\n  csm_email: accountData.metadata?.csm_email || null,\n  support_tier: accountData.metadata?.support_tier || 'standard',\n  previous_nps_scores: accountData.metadata?.nps_history || []\n};\n\nfunction calculateRiskScore(npsScore, isHighValue, accountAge) {\n  let risk = 10 - npsScore; // Base risk from NPS\n  if (isHighValue) risk += 3; // High-value accounts are higher risk\n  if (accountAge < 90) risk += 2; // New accounts are higher risk\n  return Math.min(risk, 10);\n}\n\nreturn enrichedData;"
+      },
+      "name": "Enrich Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        560
+      ],
+      "id": "7eb95a9a-8d41-407b-b3ba-3f826cbc8157"
+    },
+    {
+      "parameters": {},
+      "name": "AI Analysis",
+      "type": "@n8n/nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1060,
+        760
+      ],
+      "id": "56082e61-179a-4ce7-a90d-590e4e65abe9"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all data for downstream actions\nconst enrichedData = $node['Enrich Context'].json;\nconst aiAnalysis = JSON.parse($node['AI Analysis'].json.content || '{}');\n\nreturn {\n  ...enrichedData,\n  ai_summary: aiAnalysis.summary || 'Unable to analyze',\n  root_cause: aiAnalysis.root_cause || 'unknown',\n  suggested_action: aiAnalysis.immediate_action || 'Follow up with customer',\n  ai_risk_level: aiAnalysis.risk_level || 'medium'\n};"
+      },
+      "name": "Combine Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        420
+      ],
+      "id": "9d48f9af-80df-4c80-9634-796bce8a9e22"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.SLACK_WEBHOOK_URL}}",
+        "options": {}
+      },
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1640,
+        -80
+      ],
+      "id": "32230d59-5322-45a1-a669-c18eb60ebc53"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "description": "=**Detractor Feedback Received**\n\n**Customer Details:**\n- Name: {{$json.visitor_name}}\n- Email: {{$json.visitor_email}}\n- Role: {{$json.visitor_role}}\n- Account: {{$json.account_name}} ({{$json.account_plan}})\n- MRR: ${{$json.account_mrr}}\n- Account Age: {{$json.account_age_days}} days\n\n**NPS Details:**\n- Score: {{$json.nps_score}}/10\n- Risk Score: {{$json.risk_score}}/10\n- Urgency: {{$json.urgency_level}}\n\n**Customer Comment:**\n{{$json.nps_comment}}\n\n**AI Analysis:**\n{{$json.ai_summary}}\n\n- Root Cause: {{$json.root_cause}}\n- Suggested Action: {{$json.suggested_action}}\n- Risk Level: {{$json.ai_risk_level}}\n\n**Pendo Link:** https://app.pendo.io/visitors/{{$json.visitor_id}}",
+        "additionalFields": {}
+      },
+      "name": "Create Zendesk Ticket",
+      "type": "n8n-nodes-base.zendesk",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        120
+      ],
+      "id": "f5af46fd-1c80-46c5-96c9-60264bef6840"
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "issueType": "Bug",
+        "summary": "=[URGENT] Follow up with NPS Detractor: {{$json.visitor_name}}",
+        "additionalFields": {
+          "description": "=h3. Detractor Alert\n\n*Customer:* {{$json.visitor_name}} ({{$json.visitor_email}})\n*Account:* {{$json.account_name}}\n*Plan:* {{$json.account_plan}}\n*MRR:* ${{$json.account_mrr}}\n\nh3. NPS Feedback\n*Score:* {{$json.nps_score}}/10\n*Comment:* \n{quote}{{$json.nps_comment}}{quote}\n\nh3. AI Analysis\n{{$json.ai_summary}}\n\n*Root Cause:* {{$json.root_cause}}\n*Suggested Action:* {{$json.suggested_action}}\n*Risk Level:* {{$json.ai_risk_level}}\n\nh3. Links\n[View in Pendo|https://app.pendo.io/visitors/{{$json.visitor_id}}]",
+          "labels": [
+            "nps-detractor",
+            "{{$json.root_cause}}",
+            "{{$json.account_plan}}"
+          ],
+          "priority": {
+            "__rl": true,
+            "value": "={{$json.urgency_level === 'CRITICAL' ? 'Highest' : 'High'}}",
+            "mode": "name"
+          }
+        }
+      },
+      "name": "Create Jira Issue",
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        320
+      ],
+      "id": "ffe47eac-3e3b-4e9a-bae6-6dceed9537c2",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.is_high_value}}",
+              "value2": true
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{$json.csm_email}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "High Value Account?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        720
+      ],
+      "id": "2b535211-6512-4969-a6c6-e1772c78fc66"
+    },
+    {
+      "parameters": {
+        "resource": "task",
+        "status": "Not Started",
+        "additionalFields": {}
+      },
+      "name": "Create Salesforce Task",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1,
+      "position": [
+        1860,
+        720
+      ],
+      "id": "9aba2224-fa33-4f21-8744-f06ea0428d4c"
+    },
+    {
+      "parameters": {
+        "subject": "=🚨 Immediate Action Required: {{$json.account_name}} NPS Detractor",
+        "options": {
+          "ccEmail": "customer-success@company.com"
+        }
+      },
+      "name": "Email CSM",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        720
+      ],
+      "id": "7db88af6-c256-4cee-b8d2-2c156110c922",
+      "webhookId": "49010123-e055-45d7-80fa-b4711aa70918"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "name": "Log to Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1640,
+        920
+      ],
+      "id": "c0f52c0b-4064-4ee9-b872-dabbf90e2938",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        1860,
+        920
+      ],
+      "id": "4d7bb652-d726-4544-9dad-a78e7fa5d60d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.nps_score}}",
+              "operation": "equal"
+            }
+          ]
+        }
+      },
+      "name": "Zero Score Alert",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        520
+      ],
+      "id": "1720a19a-e48c-49b1-bdec-b128909baafc"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PAGERDUTY_WEBHOOK_URL}}",
+        "options": {}
+      },
+      "name": "PagerDuty Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1860,
+        520
+      ],
+      "id": "7ad224e5-cd95-469a-95c2-57dcedeb3023",
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Pendo NPS Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Detractor?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Data": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Zendesk Ticket",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Jira Issue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "High Value Account?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Zero Score Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "High Value Account?": {
+      "main": [
+        [
+          {
+            "node": "Create Salesforce Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Salesforce Task": {
+      "main": [
+        [
+          {
+            "node": "Email CSM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Database": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zero Score Alert": {
+      "main": [
+        [
+          {
+            "node": "PagerDuty Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "4a3a07e69c8251e15de1e29c677cdbd1f0f92a8a8f7693ea1fc3c989a473d5b8"
+  }
+}

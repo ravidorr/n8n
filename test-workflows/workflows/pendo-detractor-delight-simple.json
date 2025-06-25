@@ -1,0 +1,207 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pendo-nps-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "NPS Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -280,
+        220
+      ],
+      "id": "0d0e7b77-ae28-4652-ada7-93228488aa9f",
+      "webhookId": "pendo-nps-simple",
+      "notesInFlow": true,
+      "notes": "Receives NPS score submissions from Pendo webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -60,
+        60
+      ],
+      "id": "a6b519b8-03a5-459c-b021-f9f003b82c0c",
+      "notesInFlow": true,
+      "notes": "Sends confirmation response back to Pendo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.score}}",
+              "operation": "smallerEqual",
+              "value2": 6
+            }
+          ]
+        }
+      },
+      "name": "Is Detractor?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        220
+      ],
+      "id": "8d83e0d8-6f7e-4bd0-ad2b-0a0d9691d193",
+      "notesInFlow": true,
+      "notes": "Filters NPS scores 6 or below (detractors)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract NPS data and calculate urgency\nconst npsData = $input.first().json;\n\n// Simple risk calculation\nconst urgencyLevel = npsData.score <= 3 ? 'CRITICAL' : 'HIGH';\nconst riskScore = 10 - npsData.score;\n\n// Build alert data\nconst alertData = {\n  // NPS Data\n  nps_score: npsData.score,\n  nps_comment: npsData.comment || 'No comment provided',\n  submission_time: new Date().toISOString(),\n  \n  // Identifiers from webhook\n  visitor_id: npsData.visitor_id || 'unknown',\n  visitor_email: npsData.visitor_email || npsData.email || 'unknown@example.com',\n  visitor_name: npsData.visitor_name || npsData.name || 'Unknown User',\n  account_id: npsData.account_id || 'unknown',\n  account_name: npsData.account_name || 'Unknown Account',\n  \n  // Risk Assessment\n  urgency_level: urgencyLevel,\n  risk_score: riskScore,\n  \n  // Alert emoji based on severity\n  alert_emoji: npsData.score === 0 ? '🚨' : (npsData.score <= 3 ? '⚠️' : '⚡')\n};\n\nreturn alertData;"
+      },
+      "name": "Process NPS Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        220
+      ],
+      "id": "8e07a821-c895-4ac7-96ab-963d37586ef0",
+      "notesInFlow": true,
+      "notes": "Calculates urgency level and risk score based on NPS feedback"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{$json.alert_emoji}} NPS Detractor Alert\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"{{$json.urgency_level}} - NPS Detractor Alert\",\n        \"emoji\": true\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Customer:*\\n{{$json.visitor_name}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Email:*\\n{{$json.visitor_email}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Account:*\\n{{$json.account_name}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*NPS Score:*\\n{{$json.nps_score}}/10 (Risk: {{$json.risk_score}}/10)\"\n        }\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Customer Feedback:*\\n> {{$json.nps_comment}}\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Submitted:* {{$json.submission_time}}\"\n      }\n    },\n    {\n      \"type\": \"actions\",\n      \"elements\": [\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"View in Pendo\"\n          },\n          \"url\": \"https://app.pendo.io/visitors/{{$json.visitor_id}}\"\n        },\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"Email Customer\"\n          },\n          \"url\": \"mailto:{{$json.visitor_email}}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        340,
+        220
+      ],
+      "id": "f19c307f-d7e6-4bae-82c0-ed3bcfee0242",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Sends formatted alert to Slack with customer details and action buttons"
+    },
+    {
+      "parameters": {
+        "fromEmail": "nps-alerts@pendo.io",
+        "toEmail": "ravidor@pendo.io",
+        "subject": "={{$json.alert_emoji}} NPS Detractor: {{$json.visitor_name}} (Score: {{$json.nps_score}})",
+        "text": "=NPS DETRACTOR ALERT\n\nScore: {{$json.nps_score}}/10\nUrgency: {{$json.urgency_level}}\n\nCustomer: {{$json.visitor_name}} ({{$json.visitor_email}})\nAccount: {{$json.account_name}}\n\nFeedback:\n\"{{$json.nps_comment}}\"\n\nRecommended Actions:\n1. Review customer's recent activity in Pendo\n2. Reach out within {{$json.urgency_level === 'CRITICAL' ? '2 hours' : '24 hours'}}\n3. Schedule a call to understand their concerns\n\nView in Pendo: https://app.pendo.io/visitors/{{$json.visitor_id}}\nEmail Customer: mailto:{{$json.visitor_email}}\n\nGenerated: {{$json.submission_time}}",
+        "options": {}
+      },
+      "name": "Email Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        540,
+        220
+      ],
+      "id": "f9e9f419-eceb-47b7-bfc5-49944bc93cab",
+      "notesInFlow": true,
+      "webhookId": "7b5bbee9-da9a-4dcc-b1a4-a82b5e705413",
+      "credentials": {
+        "smtp": {
+          "id": "2sI2Bxd5x0svddgW",
+          "name": "SMTP account"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Sends urgent email notification with detractor details and recommended actions"
+    },
+    {
+      "parameters": {
+        "content": "## Simple NPS Detractor Alert System\n\n### This streamlined workflow provides real-time alerts for NPS detractors (scores 6 or below).\nWhen Pendo sends an NPS submission via webhook, the workflow filters for detractors, calculates urgency levels, and immediately notifies the team through Slack and email. The alerts include customer information, their feedback, risk assessment, and quick action buttons. This simple version is perfect for teams that need immediate awareness of unhappy customers without complex integrations or AI analysis.",
+        "height": 260,
+        "width": 560
+      },
+      "name": "Workflow Description",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        -120
+      ],
+      "id": "cbf91968-9e4a-4253-831b-964ad7f9ffd7"
+    }
+  ],
+  "connections": {
+    "NPS Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Detractor?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Detractor?": {
+      "main": [
+        [
+          {
+            "node": "Process NPS Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process NPS Data": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "NPS Webhook": [
+      {
+        "headers": {
+          "content-type": "application/json"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "score": 2,
+          "comment": "The interface is confusing and the app keeps crashing when I try to export data.",
+          "visitor_id": "visitor_123",
+          "visitor_email": "frustrated.user@example.com",
+          "visitor_name": "Jane Smith",
+          "account_id": "account_456",
+          "account_name": "Tech Startup Inc"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "instanceId": "4a3a07e69c8251e15de1e29c677cdbd1f0f92a8a8f7693ea1fc3c989a473d5b8"
+  }
+}

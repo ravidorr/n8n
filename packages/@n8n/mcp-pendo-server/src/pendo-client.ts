@@ -28,7 +28,7 @@ export class PendoClient {
 		this.client = axios.create({
 			baseURL,
 			headers: {
-				Authorization: `Bearer ${config.apiKey}`,
+				'x-pendo-integration-key': config.apiKey,
 				'Content-Type': 'application/json',
 			},
 			timeout: 30000,
@@ -62,7 +62,7 @@ export class PendoClient {
 		if (input.app_id) params.append('app_id', input.app_id);
 
 		const response: AxiosResponse<PendoPage[]> = await this.client.get(`/api/v1/pages?${params}`);
-		return response.data;
+		return response.data || [];
 	}
 
 	/**
@@ -78,7 +78,7 @@ export class PendoClient {
 		const response: AxiosResponse<PendoAccount[]> = await this.client.get(
 			`/api/v1/accounts?${params}`,
 		);
-		return response.data;
+		return response.data || [];
 	}
 
 	/**
@@ -94,7 +94,7 @@ export class PendoClient {
 		const response: AxiosResponse<PendoVisitor[]> = await this.client.get(
 			`/api/v1/visitors?${params}`,
 		);
-		return response.data;
+		return response.data || [];
 	}
 
 	/**
@@ -178,7 +178,7 @@ export class PendoClient {
 	 */
 	async getAccount(accountId: string): Promise<PendoAccount> {
 		const response: AxiosResponse<PendoAccount> = await this.client.get(
-			`/api/v1/accounts/${accountId}`,
+			`/api/v1/account/${accountId}`,
 		);
 		return response.data;
 	}
@@ -188,7 +188,7 @@ export class PendoClient {
 	 */
 	async getVisitor(visitorId: string): Promise<PendoVisitor> {
 		const response: AxiosResponse<PendoVisitor> = await this.client.get(
-			`/api/v1/visitors/${visitorId}`,
+			`/api/v1/visitor/${visitorId}`,
 		);
 		return response.data;
 	}
@@ -197,7 +197,7 @@ export class PendoClient {
 	 * Get page details by ID
 	 */
 	async getPage(pageId: string): Promise<PendoPage> {
-		const response: AxiosResponse<PendoPage> = await this.client.get(`/api/v1/pages/${pageId}`);
+		const response: AxiosResponse<PendoPage> = await this.client.get(`/api/v1/page/${pageId}`);
 		return response.data;
 	}
 
@@ -206,16 +206,17 @@ export class PendoClient {
 	 */
 	async testConnection(): Promise<boolean> {
 		try {
-			await this.client.get('/api/v1/health');
-			return true;
-		} catch (error) {
-			// Try with a simple endpoint if health endpoint doesn't exist
-			try {
-				await this.getPages({ limit: 1 });
-				return true;
-			} catch {
-				return false;
+			// Try to get a specific visitor to test the connection
+			// Using 'test' as a visitor ID that might not exist, but will test auth
+			const response = await this.client.get('/api/v1/visitor/test');
+			return true; // If we get here without an error, connection is good
+		} catch (error: any) {
+			// If we get a 404, that's fine - it means the API is working but the visitor doesn't exist
+			// If we get a 401/403, that means auth failed
+			if (error.message && error.message.includes('404')) {
+				return true; // API is working, just no visitor found
 			}
+			return false;
 		}
 	}
 }

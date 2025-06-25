@@ -1,0 +1,118 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        60,
+        300
+      ],
+      "id": "01f790ab-1f8c-480d-afa0-ac9aa3cc9696",
+      "notesInFlow": true,
+      "notes": "Manually starts the mock data generation workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate mock Pendo data for demonstration\n\n// Mock pages data\nconst pages = [\n  { id: 'page-1', name: 'Dashboard', url: '/dashboard', visits: 15234 },\n  { id: 'page-2', name: 'Settings', url: '/settings', visits: 8932 },\n  { id: 'page-3', name: 'Analytics', url: '/analytics', visits: 7654 },\n  { id: 'page-4', name: 'Users', url: '/users', visits: 6543 },\n  { id: 'page-5', name: 'Reports', url: '/reports', visits: 5432 }\n];\n\n// Mock accounts data\nconst accounts = [\n  { id: 'acc-1', name: 'Acme Corp', users: 150, plan: 'Enterprise', mrr: 15000 },\n  { id: 'acc-2', name: 'TechStart Inc', users: 25, plan: 'Pro', mrr: 2500 },\n  { id: 'acc-3', name: 'Global Solutions', users: 500, plan: 'Enterprise', mrr: 45000 },\n  { id: 'acc-4', name: 'Small Business Co', users: 10, plan: 'Starter', mrr: 500 },\n  { id: 'acc-5', name: 'MidSize Ltd', users: 75, plan: 'Pro', mrr: 7500 }\n];\n\n// Mock visitors data\nconst visitors = [\n  { id: 'vis-1', email: 'john@acme.com', account: 'Acme Corp', lastSeen: '2024-01-20', visits: 234 },\n  { id: 'vis-2', email: 'jane@techstart.com', account: 'TechStart Inc', lastSeen: '2024-01-19', visits: 156 },\n  { id: 'vis-3', email: 'bob@global.com', account: 'Global Solutions', lastSeen: '2024-01-20', visits: 89 },\n  { id: 'vis-4', email: 'alice@small.com', account: 'Small Business Co', lastSeen: '2024-01-18', visits: 45 },\n  { id: 'vis-5', email: 'charlie@midsize.com', account: 'MidSize Ltd', lastSeen: '2024-01-20', visits: 178 }\n];\n\n// Mock feature usage\nconst featureUsage = [\n  { feature: 'Advanced Analytics', adoption: 78, accounts: 4 },\n  { feature: 'Custom Reports', adoption: 65, accounts: 3 },\n  { feature: 'API Integration', adoption: 45, accounts: 2 },\n  { feature: 'Collaboration Tools', adoption: 89, accounts: 5 },\n  { feature: 'Data Export', adoption: 92, accounts: 5 }\n];\n\nreturn {\n  pages,\n  accounts,\n  visitors,\n  featureUsage,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Generate Mock Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "id": "38b99936-b15f-4510-8ce2-6221ec88dfd0",
+      "notesInFlow": true,
+      "notes": "Creates sample Pendo data for demonstration purposes without API connection"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate analytics report from mock data\nconst data = $json;\n\nconst report = `# Pendo Analytics Report\n\n**Generated:** ${new Date().toLocaleString()}\n\n## Executive Summary\n\nThis report provides insights into user engagement, account activity, and feature adoption across your application.\n\n### Key Metrics\n\n- **Total Pages Tracked:** ${data.pages.length}\n- **Active Accounts:** ${data.accounts.length}\n- **Total Visitors:** ${data.visitors.length}\n- **Average Feature Adoption:** ${Math.round(data.featureUsage.reduce((acc, f) => acc + f.adoption, 0) / data.featureUsage.length)}%\n\n## Most Visited Pages\n\n| Page | URL | Visits |\n|------|-----|--------|\n${data.pages.map(p => `| ${p.name} | ${p.url} | ${p.visits.toLocaleString()} |`).join('\\n')}\n\n## Top Accounts by Value\n\n| Account | Users | Plan | MRR |\n|---------|-------|------|-----|\n${data.accounts.sort((a, b) => b.mrr - a.mrr).slice(0, 5).map(a => `| ${a.name} | ${a.users} | ${a.plan} | $${a.mrr.toLocaleString()} |`).join('\\n')}\n\n## Recent Visitor Activity\n\n| Visitor | Account | Last Seen | Total Visits |\n|---------|---------|-----------|-------------|\n${data.visitors.slice(0, 5).map(v => `| ${v.email} | ${v.account} | ${v.lastSeen} | ${v.visits} |`).join('\\n')}\n\n## Feature Adoption Rates\n\n| Feature | Adoption Rate | Accounts Using |\n|---------|---------------|----------------|\n${data.featureUsage.sort((a, b) => b.adoption - a.adoption).map(f => `| ${f.feature} | ${f.adoption}% | ${f.accounts} |`).join('\\n')}\n\n## Recommendations\n\n1. **Focus on Low-Adoption Features**: API Integration has only 45% adoption. Consider creating tutorials or improving documentation.\n\n2. **Engage with High-Value Accounts**: Global Solutions represents significant MRR. Ensure they're maximizing platform value.\n\n3. **Re-engage Inactive Users**: Some visitors haven't been seen recently. Consider targeted email campaigns.\n\n4. **Optimize Popular Pages**: Dashboard and Settings are most visited. Ensure these pages load quickly and provide value.\n\n5. **Upsell Opportunities**: Small Business Co might benefit from upgrading to Pro plan based on their user count.\n\n---\n\n*This is a demonstration report with mock data. In production, this would use real Pendo API data.*`;\n\nreturn {\n  report,\n  data,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Generate Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "id": "62ea6667-2221-43bf-b000-090a6d3c8073",
+      "notesInFlow": true,
+      "notes": "Processes mock data into a formatted markdown report with insights and recommendations"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{$json.report}}",
+        "destinationKey": "html",
+        "options": {}
+      },
+      "name": "Convert to HTML",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        660,
+        300
+      ],
+      "id": "b8939106-0bfa-4272-9050-dc0a9dbb93df",
+      "notesInFlow": true,
+      "notes": "Converts the markdown report to HTML format for display or email"
+    },
+    {
+      "parameters": {
+        "content": "## Mock Pendo Analytics Demo\n\n### This workflow demonstrates Pendo analytics reporting capabilities using mock data.\nIt generates sample data for pages, accounts, visitors, and feature usage, then creates a comprehensive report with visualizations, key metrics, and actionable recommendations. This is useful for testing report layouts, demonstrating the system to stakeholders, or developing without API access.\nThe workflow produces a professional-looking analytics report identical to what would be generated with real Pendo data.",
+        "width": 400
+      },
+      "name": "Workflow Description",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        80
+      ],
+      "id": "d2a0ec97-e486-4aa6-a8d0-30752414e73b"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Mock Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Mock Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Report": {
+      "main": [
+        [
+          {
+            "node": "Convert to HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "4a3a07e69c8251e15de1e29c677cdbd1f0f92a8a8f7693ea1fc3c989a473d5b8"
+  }
+}

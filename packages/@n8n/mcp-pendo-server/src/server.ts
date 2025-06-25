@@ -1,10 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-	CallToolRequestSchema,
-	ListToolsRequestSchema,
-	ToolSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { PendoClient } from './pendo-client.js';
 import {
 	PendoConfig,
@@ -19,7 +15,7 @@ import {
 } from './types.js';
 
 export class PendoMCPServer {
-	private server: Server;
+	public server: Server;
 	private pendoClient: PendoClient;
 
 	constructor(config: PendoConfig) {
@@ -601,6 +597,6 @@ export class PendoMCPServer {
 	async run(): Promise<void> {
 		const transport = new StdioServerTransport();
 		await this.server.connect(transport);
-		console.error('Pendo MCP server running on stdio');
+		console.error('Pendo MCP server running on stdio transport');
 	}
 }

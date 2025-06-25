@@ -1,251 +1,227 @@
 {
-  "createdAt": "2025-01-20T12:00:00.000Z",
-  "updatedAt": "2025-01-20T12:00:00.000Z",
-  "id": "pendo-simple-demo",
-  "name": "Pendo MCP Server - Simple Demo",
-  "active": false,
   "nodes": [
     {
       "parameters": {},
       "name": "Start",
       "type": "n8n-nodes-base.start",
       "typeVersion": 1,
-      "position": [250, 300],
-      "id": "start-node"
+      "position": [
+        520,
+        280
+      ],
+      "id": "2c4a67ac-e6fb-487b-b2e8-f35eb45ca522",
+      "notesInFlow": true,
+      "notes": "Entry point for manual or scheduled execution"
     },
     {
       "parameters": {
-        "toolName": "get-pages",
-        "arguments": {
-          "limit": 10,
-          "includeMetadata": true
-        }
+        "method": "POST",
+        "url": "http://localhost:3000/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get-pages\",\n    \"arguments\": {\n      \"limit\": 10,\n      \"offset\": 0\n    }\n  },\n  \"id\": \"{{$guid()}}\"\n}",
+        "options": {}
       },
       "name": "Get Pendo Pages",
-      "type": "@n8n/nodes-langchain.mcpClientTool",
-      "typeVersion": 1,
-      "position": [450, 200],
-      "id": "get-pages-node"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        860,
+        280
+      ],
+      "id": "28e70aeb-13e0-461a-b72a-d9ac4e74e987",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Fetches top 10 tracked pages from Pendo MCP server"
     },
     {
       "parameters": {
-        "toolName": "get-accounts",
-        "arguments": {
-          "limit": 5,
-          "includeMetadata": true
-        }
+        "method": "POST",
+        "url": "http://localhost:3000/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get-accounts\",\n    \"arguments\": {\n      \"limit\": 5,\n      \"offset\": 0\n    }\n  },\n  \"id\": \"{{$guid()}}\"\n}",
+        "options": {}
       },
       "name": "Get Pendo Accounts",
-      "type": "@n8n/nodes-langchain.mcpClientTool",
-      "typeVersion": 1,
-      "position": [450, 300],
-      "id": "get-accounts-node"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        860,
+        480
+      ],
+      "id": "66d9456b-5a60-4a8d-a6f8-9239c7d07889",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Retrieves top 5 accounts from Pendo MCP server"
     },
     {
       "parameters": {
-        "toolName": "get-visitors",
-        "arguments": {
-          "limit": 10,
-          "period": "last_7_days"
-        }
+        "method": "POST",
+        "url": "http://localhost:3000/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get-visitors\",\n    \"arguments\": {\n      \"limit\": 10,\n      \"offset\": 0\n    }\n  },\n  \"id\": \"{{$guid()}}\"\n}",
+        "options": {}
       },
       "name": "Get Recent Visitors",
-      "type": "@n8n/nodes-langchain.mcpClientTool",
-      "typeVersion": 1,
-      "position": [450, 400],
-      "id": "get-visitors-node"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        860,
+        680
+      ],
+      "id": "48e5c2e7-e60e-42da-b0b9-917f621c4ed1",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Collects recent visitor data from Pendo MCP server"
     },
     {
       "parameters": {
-        "toolName": "get-feature-usage",
-        "arguments": {
-          "period": "last_30_days",
-          "limit": 20
-        }
+        "method": "POST",
+        "url": "http://localhost:3000/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get-feature-usage\",\n    \"arguments\": {\n      \"start_date\": \"{{DateTime.now().minus({days: 30}).toISODate()}}\",\n      \"end_date\": \"{{DateTime.now().toISODate()}}\",\n      \"period\": \"day\"\n    }\n  },\n  \"id\": \"{{$guid()}}\"\n}",
+        "options": {}
       },
       "name": "Get Feature Usage",
-      "type": "@n8n/nodes-langchain.mcpClientTool",
-      "typeVersion": 1,
-      "position": [450, 500],
-      "id": "get-feature-usage-node"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        860,
+        880
+      ],
+      "id": "2d38044b-8588-481b-94e9-e11ff53c7d8d",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Gathers feature usage statistics for the last 30 days"
     },
     {
       "parameters": {
-        "merge": "multiplex",
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
         "options": {}
       },
       "name": "Merge Data",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
-      "position": [650, 350],
-      "id": "merge-data-node"
+      "position": [
+        1080,
+        300
+      ],
+      "id": "86f17213-aa92-4866-8ce2-5d8a4cf3588a",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Combines all API responses into a single data stream for processing"
     },
     {
       "parameters": {
-        "jsCode": "// Process and format Pendo data\nconst pages = $input.all().find(item => item.json.toolName === 'get-pages')?.json.result || [];\nconst accounts = $input.all().find(item => item.json.toolName === 'get-accounts')?.json.result || [];\nconst visitors = $input.all().find(item => item.json.toolName === 'get-visitors')?.json.result || [];\nconst featureUsage = $input.all().find(item => item.json.toolName === 'get-feature-usage')?.json.result || [];\n\n// Create summary report\nconst report = {\n  timestamp: new Date().toISOString(),\n  summary: {\n    total_pages: pages.length,\n    total_accounts: accounts.length,\n    total_visitors: visitors.length,\n    features_tracked: featureUsage.length\n  },\n  top_pages: pages.slice(0, 5).map(page => ({\n    name: page.name,\n    url: page.url,\n    views: page.views || 0\n  })),\n  active_accounts: accounts.slice(0, 3).map(account => ({\n    id: account.id,\n    name: account.name,\n    last_activity: account.last_activity\n  })),\n  visitor_insights: {\n    new_visitors: visitors.filter(v => v.is_new).length,\n    returning_visitors: visitors.filter(v => !v.is_new).length\n  },\n  top_features: featureUsage.slice(0, 5).map(feature => ({\n    name: feature.feature_name,\n    usage_count: feature.count,\n    trend: feature.trend || 'stable'\n  }))\n};\n\nreturn { json: report };"
+        "jsCode": "// Process and format Pendo data from MCP responses\nconst allData = $input.all();\n\n// Initialize default values\nlet pagesData = [];\nlet accountsData = [];\nlet visitorsData = [];\nlet featureUsageData = [];\nlet hasErrors = false;\nlet errorMessages = [];\n\n// Group data by index position from merge node\nif (allData.length >= 4) {\n  // Data comes in order: pages, accounts, visitors, features\n  try {\n    // Process pages data (index 0)\n    if (allData[0]?.json?.error) {\n      hasErrors = true;\n      errorMessages.push('Pages: ' + allData[0].json.error.message);\n    } else if (allData[0]?.json?.result?.content?.[0]?.text) {\n      pagesData = JSON.parse(allData[0].json.result.content[0].text);\n    }\n  } catch (e) {\n    console.error('Error parsing pages data:', e);\n  }\n  \n  try {\n    // Process accounts data (index 1)\n    if (allData[1]?.json?.error) {\n      hasErrors = true;\n      errorMessages.push('Accounts: ' + allData[1].json.error.message);\n    } else if (allData[1]?.json?.result?.content?.[0]?.text) {\n      accountsData = JSON.parse(allData[1].json.result.content[0].text);\n    }\n  } catch (e) {\n    console.error('Error parsing accounts data:', e);\n  }\n  \n  try {\n    // Process visitors data (index 2)\n    if (allData[2]?.json?.error) {\n      hasErrors = true;\n      errorMessages.push('Visitors: ' + allData[2].json.error.message);\n    } else if (allData[2]?.json?.result?.content?.[0]?.text) {\n      visitorsData = JSON.parse(allData[2].json.result.content[0].text);\n    }\n  } catch (e) {\n    console.error('Error parsing visitors data:', e);\n  }\n  \n  try {\n    // Process feature usage data (index 3)\n    if (allData[3]?.json?.error) {\n      hasErrors = true;\n      errorMessages.push('Features: ' + allData[3].json.error.message);\n    } else if (allData[3]?.json?.result?.content?.[0]?.text) {\n      featureUsageData = JSON.parse(allData[3].json.result.content[0].text);\n    }\n  } catch (e) {\n    console.error('Error parsing feature usage data:', e);\n  }\n}\n\n// Create summary report with safe data access\nconst report = {\n  timestamp: new Date().toISOString(),\n  hasErrors: hasErrors,\n  errorMessages: errorMessages,\n  summary: {\n    total_pages: pagesData.length,\n    total_accounts: accountsData.length,\n    total_visitors: visitorsData.length,\n    features_tracked: featureUsageData.length\n  },\n  top_pages: pagesData.slice(0, 5).map(page => ({\n    name: page.name || 'Unknown',\n    url: page.url || '#',\n    views: page.views || 0\n  })),\n  active_accounts: accountsData.slice(0, 3).map(account => ({\n    id: account.id || 'unknown',\n    name: account.name || 'Unknown Account',\n    mrr: account.metadata?.mrr || 0\n  })),\n  visitor_insights: {\n    new_visitors: visitorsData.filter(v => v.metadata?.is_new).length,\n    returning_visitors: visitorsData.filter(v => !v.metadata?.is_new).length\n  },\n  top_features: featureUsageData.slice(0, 5).map(feature => ({\n    name: feature.feature_name || 'Unknown Feature',\n    usage_count: feature.usage_count || 0,\n    unique_visitors: feature.unique_visitors || 0\n  }))\n};\n\nreturn { json: report };"
       },
       "name": "Process Analytics Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [850, 350],
-      "id": "process-data-node"
+      "position": [
+        1280,
+        300
+      ],
+      "id": "6516f196-5521-4dba-bc8a-324fbd9791df",
+      "notesInFlow": true,
+      "notes": "Parses MCP responses and creates summary report with error handling"
     },
     {
       "parameters": {
-        "conditions": {
-          "number": [
-            {
-              "value1": "={{$json.summary.total_visitors}}",
-              "operation": "larger",
-              "value2": 0
-            }
-          ]
-        }
-      },
-      "name": "Check Data Available",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [1050, 350],
-      "id": "check-data-node"
-    },
-    {
-      "parameters": {
-        "content": "# Pendo Analytics Report\n\n**Generated:** {{$json.timestamp}}\n\n## Summary\n- **Pages:** {{$json.summary.total_pages}}\n- **Accounts:** {{$json.summary.total_accounts}} \n- **Visitors:** {{$json.summary.total_visitors}}\n- **Features Tracked:** {{$json.summary.features_tracked}}\n\n## Top Pages\n{{$json.top_pages.map(page => `- **${page.name}**: ${page.views} views\\n  URL: ${page.url}`).join('\\n')}}\n\n## Active Accounts\n{{$json.active_accounts.map(account => `- ${account.name} (ID: ${account.id})`).join('\\n')}}\n\n## Visitor Insights\n- New visitors: {{$json.visitor_insights.new_visitors}}\n- Returning visitors: {{$json.visitor_insights.returning_visitors}}\n\n## Top Features\n{{$json.top_features.map(feature => `- **${feature.name}**: ${feature.usage_count} uses (${feature.trend})`).join('\\n')}}",
+        "mode": "markdownToHtml",
+        "markdown": "# Pendo Analytics Report\n\n**Generated:** {{$json.timestamp}}\n\n{{#if $json.hasErrors}}\n## ⚠️ API Connection Issues\nThe following errors occurred while fetching data:\n{{$json.errorMessages.map(msg => `- ${msg}`).join('\\n')}}\n\n**Note:** The report below shows placeholder data. To get real data:\n1. Ensure the Pendo MCP server is running with valid API credentials\n2. Or enable \"Pin Data\" mode to use the mock data included in the workflow\n{{/if}}\n\n## Summary\n- **Pages:** {{$json.summary.total_pages}}\n- **Accounts:** {{$json.summary.total_accounts}} \n- **Visitors:** {{$json.summary.total_visitors}}\n- **Features Tracked:** {{$json.summary.features_tracked}}\n\n## Top Pages\n{{$json.top_pages.length > 0 ? $json.top_pages.map(page => `- **${page.name}**: ${page.views} views\\n  URL: ${page.url}`).join('\\n') : 'No page data available'}}\n\n## Active Accounts\n{{$json.active_accounts.length > 0 ? $json.active_accounts.map(account => `- ${account.name} (ID: ${account.id}) - MRR: $${account.mrr}`).join('\\n') : 'No account data available'}}\n\n## Visitor Insights\n- New visitors: {{$json.visitor_insights.new_visitors}}\n- Returning visitors: {{$json.visitor_insights.returning_visitors}}\n\n## Top Features\n{{$json.top_features.length > 0 ? $json.top_features.map(feature => `- **${feature.name}**: ${feature.usage_count} uses by ${feature.unique_visitors} unique visitors`).join('\\n') : 'No feature data available'}}",
         "options": {}
       },
       "name": "Generate Report",
       "type": "n8n-nodes-base.markdown",
       "typeVersion": 1,
-      "position": [1250, 300],
-      "id": "generate-report-node"
+      "position": [
+        1500,
+        300
+      ],
+      "id": "0a1288d5-3774-417e-a3d5-61247720f94e",
+      "notesInFlow": true,
+      "notes": "Converts processed data into formatted HTML report with visualizations"
     },
     {
       "parameters": {
-        "operation": "create",
+        "fromEmail": "ravidor@pendo.io",
+        "toEmail": "ravidor@pendo.io",
         "subject": "Pendo Weekly Analytics Report",
-        "message": "={{$node['Generate Report'].json.html}}",
         "options": {
-          "ccEmail": "analytics-team@company.com"
+          "ccEmail": "ravidor@pendo.io"
         }
       },
       "name": "Email Report",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
-      "position": [1450, 250],
+      "position": [
+        1720,
+        220
+      ],
+      "id": "669aa5e5-ecc0-47d7-a0a0-e271bcfc7358",
+      "notesInFlow": true,
+      "webhookId": "f4990ec0-52e8-4e87-ad57-debb76ddc2af",
       "credentials": {
         "smtp": {
-          "id": "smtp-credentials",
-          "name": "Company SMTP"
+          "id": "2sI2Bxd5x0svddgW",
+          "name": "SMTP account"
         }
       },
-      "id": "email-report-node"
+      "notes": "Sends the analytics report via email to configured recipients"
     },
     {
       "parameters": {
-        "operation": "appendOrUpdate",
-        "documentId": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-        "sheetName": "Pendo Analytics",
-        "columns": {
-          "values": [
-            {
-              "column": "Date",
-              "value": "={{DateTime.now().toFormat('yyyy-MM-dd')}}"
-            },
-            {
-              "column": "Total Pages",
-              "value": "={{$node['Process Analytics Data'].json.summary.total_pages}}"
-            },
-            {
-              "column": "Total Accounts",
-              "value": "={{$node['Process Analytics Data'].json.summary.total_accounts}}"
-            },
-            {
-              "column": "Total Visitors",
-              "value": "={{$node['Process Analytics Data'].json.summary.total_visitors}}"
-            },
-            {
-              "column": "New Visitors",
-              "value": "={{$node['Process Analytics Data'].json.visitor_insights.new_visitors}}"
-            },
-            {
-              "column": "Returning Visitors",
-              "value": "={{$node['Process Analytics Data'].json.visitor_insights.returning_visitors}}"
-            }
-          ]
-        }
-      },
-      "name": "Log to Google Sheets",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [1450, 350],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-oauth",
-          "name": "Google Sheets"
-        }
-      },
-      "id": "google-sheets-node"
-    },
-    {
-      "parameters": {
+        "method": "POST",
         "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
-        "httpMethod": "POST",
-        "jsonParameters": true,
-        "options": {},
-        "bodyParametersJson": "={\n  \"text\": \"📊 Pendo Analytics Update\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Pendo Analytics Report\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Pages:* {{$node['Process Analytics Data'].json.summary.total_pages}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Accounts:* {{$node['Process Analytics Data'].json.summary.total_accounts}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Visitors:* {{$node['Process Analytics Data'].json.summary.total_visitors}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Features:* {{$node['Process Analytics Data'].json.summary.features_tracked}}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"Generated via n8n Pendo MCP Server\"\n        }\n      ]\n    }\n  ]\n}"
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"📊 Pendo Analytics Update\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Pendo Analytics Report\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Pages:* {{$node['Process Analytics Data'].json.summary.total_pages}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Accounts:* {{$node['Process Analytics Data'].json.summary.total_accounts}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Visitors:* {{$node['Process Analytics Data'].json.summary.total_visitors}}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Features:* {{$node['Process Analytics Data'].json.summary.features_tracked}}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"View full report in your email or click below for details.\"\n      }\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"Generated via n8n Pendo MCP Server at {{$node['Process Analytics Data'].json.timestamp}}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
       },
       "name": "Slack Notification",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1450, 450],
-      "id": "slack-node"
+      "position": [
+        1720,
+        420
+      ],
+      "id": "20a1f14e-561f-4f3d-9ac2-4faae51d5e8c",
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Posts analytics summary to Slack with key metrics"
     },
     {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "triggerAtHour": 9,
-              "triggerAtMinute": 0,
-              "weekdays": [1, 2, 3, 4, 5]
-            }
-          ]
-        }
-      },
+      "parameters": {},
       "name": "Weekly Schedule",
       "type": "n8n-nodes-base.cron",
       "typeVersion": 1,
-      "position": [50, 350],
-      "id": "schedule-node"
+      "position": [
+        320,
+        280
+      ],
+      "id": "44c744df-c17c-4183-9cb7-c06e6a4ba7a4",
+      "notesInFlow": true,
+      "notes": "Triggers workflow every weekday at 9:00 AM for automated reporting"
     },
     {
       "parameters": {
-        "toolName": "create-guide",
-        "arguments": {
-          "name": "New User Onboarding - {{DateTime.now().toFormat('yyyy-MM')}}",
-          "steps": [
-            {
-              "target_page": "dashboard",
-              "title": "Welcome to the Dashboard",
-              "content": "This is your main dashboard where you can see all your key metrics."
-            },
-            {
-              "target_page": "profile",
-              "title": "Complete Your Profile",
-              "content": "Please complete your profile to get personalized recommendations."
-            }
-          ],
-          "trigger_conditions": {
-            "visitor_type": "new",
-            "page_url": "/dashboard"
-          }
-        }
+        "content": "## Pendo Analytics Reporting Demo\n\n### This workflow demonstrates a complete analytics reporting pipeline with Pendo data.\nIt fetches data from multiple Pendo endpoints in parallel (pages, accounts, visitors, and feature usage), processes the responses with error handling, and generates a comprehensive report. The workflow includes both email and Slack distribution channels, plus a weekly schedule for automation. Mock data is included for testing without API access. This showcases best practices for production-ready Pendo integrations with error handling and multiple notification channels.",
+        "height": 240,
+        "width": 680
       },
-      "name": "Create Onboarding Guide",
-      "type": "@n8n/nodes-langchain.mcpClientTool",
+      "name": "Workflow Description",
+      "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [1050, 500],
-      "id": "create-guide-node"
+      "position": [
+        160,
+        0
+      ],
+      "id": "2fa6bec7-b4a5-458a-9090-47ba0ca17fe4"
     }
   ],
   "connections": {
@@ -297,28 +273,6 @@
         ]
       ]
     },
-    "Get Recent Visitors": {
-      "main": [
-        [
-          {
-            "node": "Merge Data",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "Get Feature Usage": {
-      "main": [
-        [
-          {
-            "node": "Merge Data",
-            "type": "main",
-            "index": 3
-          }
-        ]
-      ]
-    },
     "Merge Data": {
       "main": [
         [
@@ -334,23 +288,7 @@
       "main": [
         [
           {
-            "node": "Check Data Available",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Data Available": {
-      "main": [
-        [
-          {
             "node": "Generate Report",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Create Onboarding Guide",
             "type": "main",
             "index": 0
           }
@@ -366,56 +304,74 @@
             "index": 0
           },
           {
-            "node": "Log to Google Sheets",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Slack Notification",
             "type": "main",
             "index": 0
           }
         ]
       ]
-    },
-    "Weekly Schedule": {
-      "main": [
-        [
-          {
-            "node": "Start",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
-  "settings": {
-    "executionOrder": "v1"
+  "pinData": {
+    "Get Pendo Pages": [
+      {
+        "jsonrpc": "2.0",
+        "id": "pages-123",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "[{\"id\":\"page1\",\"name\":\"Dashboard\",\"url\":\"/dashboard\",\"views\":1500},{\"id\":\"page2\",\"name\":\"Settings\",\"url\":\"/settings\",\"views\":800},{\"id\":\"page3\",\"name\":\"Reports\",\"url\":\"/reports\",\"views\":600}]"
+            }
+          ]
+        }
+      }
+    ],
+    "Get Pendo Accounts": [
+      {
+        "jsonrpc": "2.0",
+        "id": "accounts-456",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "[{\"id\":\"acc1\",\"name\":\"Acme Corp\",\"metadata\":{\"mrr\":5000}},{\"id\":\"acc2\",\"name\":\"Tech Solutions\",\"metadata\":{\"mrr\":3000}},{\"id\":\"acc3\",\"name\":\"Global Industries\",\"metadata\":{\"mrr\":7500}}]"
+            }
+          ]
+        }
+      }
+    ],
+    "Get Recent Visitors": [
+      {
+        "jsonrpc": "2.0",
+        "id": "visitors-789",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "[{\"visitor_id\":\"v1\",\"metadata\":{\"is_new\":true}},{\"visitor_id\":\"v2\",\"metadata\":{\"is_new\":false}},{\"visitor_id\":\"v3\",\"metadata\":{\"is_new\":true}},{\"visitor_id\":\"v4\",\"metadata\":{\"is_new\":false}},{\"visitor_id\":\"v5\",\"metadata\":{\"is_new\":false}}]"
+            }
+          ]
+        }
+      }
+    ],
+    "Get Feature Usage": [
+      {
+        "jsonrpc": "2.0",
+        "id": "features-101",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "[{\"feature_name\":\"Export Data\",\"usage_count\":250,\"unique_visitors\":45},{\"feature_name\":\"Create Report\",\"usage_count\":180,\"unique_visitors\":30},{\"feature_name\":\"Share Dashboard\",\"usage_count\":120,\"unique_visitors\":25}]"
+            }
+          ]
+        }
+      }
+    ]
   },
-  "staticData": {},
   "meta": {
-    "templateCredsSetupCompleted": false
-  },
-  "pinData": {},
-  "versionId": null,
-  "triggerCount": 0,
-  "tags": [
-    {
-      "id": "pendo",
-      "name": "Pendo"
-    },
-    {
-      "id": "mcp",
-      "name": "MCP"
-    },
-    {
-      "id": "analytics",
-      "name": "Analytics"
-    },
-    {
-      "id": "reporting",
-      "name": "Reporting"
-    }
-  ]
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4a3a07e69c8251e15de1e29c677cdbd1f0f92a8a8f7693ea1fc3c989a473d5b8"
+  }
 }
