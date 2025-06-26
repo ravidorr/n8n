@@ -109,7 +109,7 @@ export abstract class AbstractServer {
 
 	private setupCommonMiddlewares() {
 		// Compress the response data
-		this.app.use(compression());
+		this.app.use(compression() as any);
 
 		// Read incoming data into `rawBody`
 		this.app.use(rawBodyReader);

@@ -140,7 +140,7 @@ export class TaskBrokerServer {
 
 	private setupCommonMiddlewares() {
 		// Compress the response data
-		this.app.use(compression());
+		this.app.use(compression() as any);
 
 		this.app.use(rawBodyReader);
 		this.app.use(bodyParser);

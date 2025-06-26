@@ -37,12 +37,12 @@ async function createApiRouter(
 
 		apiController.use(
 			`/${publicApiEndpoint}/${version}/docs`,
-			serveFiles(swaggerDocument),
+			serveFiles(swaggerDocument) as any,
 			setup(swaggerDocument, {
 				customCss: swaggerThemeCss,
 				customSiteTitle: 'n8n Public API UI',
 				customfavIcon: `${n8nPath}favicon.ico`,
-			}),
+			}) as any,
 		);
 	}
 
